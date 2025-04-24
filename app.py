@@ -47,4 +47,4 @@ def personal_area():
     return render_template('personal_area.html', watchlist=watchlist_movies)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="127.0.0.1")
