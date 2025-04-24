@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Watchlist</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>My Watchlist</h1>
+            <a href="{{ url_for('index') }}" class="back-button">← Back to Recommendations</a>
+        </div>
+        
+        {% if watchlist %}
+            <div class="results-container">
+                <div class="results2">
+                    {% for movie in watchlist %}
+                        <div class="movie">
+                            {% if movie.poster %}
+                                <a href="{{ movie.tmdb_link }}" target="_blank" class="movie-link">
+                                    <img src="{{ movie.poster }}" alt="Poster" class="watchlist-poster">
+                                </a>
+                            {% endif %}
+                            <div class="movie-title-container">
+                                <a href="{{ movie.tmdb_link }}" target="_blank" class="movie-link">
+                                    <h3 class="movie-title">{{ movie.name }}</h3>
+                                </a>
+                                <button class="remove-btn-watchlist" 
+                                        onclick="location.href='/remove_from_watchlist/{{ movie.name|urlencode }}'"
+                                        title="Remove from watchlist">×</button>
+                            </div>                            
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <p class="empty-watchlist">Your watchlist is empty.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

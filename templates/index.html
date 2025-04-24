@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommender</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Movie Recommender</h1>
+        <a href="{{ url_for('personal_area') }}" class="personal-area-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </a>
+    </div>
+        
+        <!-- Box per il menu di selezione iniziale -->
+        <div class="selection-box">
+            <form method="POST" id="recommendation-form">
+                <label for="movie">Select a Movie:</label>
+                <div class="movie-search-container">
+                    <input type="text" id="movie-search" list="movie-options" 
+                           name="movie" placeholder="Type a movie name..."
+                           value="{{ selected_movie_name }}" required>
+                    <datalist id="movie-options">
+                        {% for movie in movies %}
+                        <option value="{{ movie }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+                
+                <label for="platforms">Select Streaming Platforms:</label>
+                <div class="selected-platforms" id="selected-platforms">
+                    {% for platform in selected_platforms %}
+                        <div class="platform-tag">
+                            {{ platform }}
+                            <span class="close" onclick="removePlatform('{{ platform }}')">×</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Campo nascosto per le piattaforme selezionate -->
+                <input type="hidden" name="platforms" id="hidden-platforms" value="{{ selected_platforms|join(',') }}">
+                
+                <!-- Riga con i pulsanti -->
+                <div class="button-row">
+                    <!-- Pulsante per aprire il menu delle piattaforme -->
+                    <button type="button" class="platform-selector" onclick="togglePlatformDropdown()">Select Platforms</button>
+                    
+                    <!-- Pulsante di ricerca con icona -->
+                    <button type="submit" class="search-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Overlay per oscurare lo sfondo -->
+        <div class="overlay" id="overlay"></div>
+        
+        <!-- Menu a tendina delle piattaforme (ora dentro al form) -->
+        <div class="platform-dropdown" id="platform-dropdown">
+            <label><input type="checkbox" name="platform" value="Netflix" {% if "Netflix" in selected_platforms %} checked {% endif %}> Netflix</label>
+            <label><input type="checkbox" name="platform" value="Disney+" {% if "Disney+" in selected_platforms %} checked {% endif %}> Disney+</label>
+            <label><input type="checkbox" name="platform" value="Amazon Prime" {% if "Amazon Prime" in selected_platforms %} checked {% endif %}> Amazon Prime</label>
+            <label><input type="checkbox" name="platform" value="Apple tv" {% if "Apple tv" in selected_platforms %} checked {% endif %}> Apple tv</label>
+            <label><input type="checkbox" name="platform" value="Tim vision" {% if "Tim vision" in selected_platforms %} checked {% endif %}> Tim vision</label>
+        </div>
+        
+        <!-- Risultati dei film consigliati -->
+        {% if names %}
+            <div class="results-container">
+                <div class="results">
+                    {% for i in range(names|length) %}
+                        <div class="movie">
+                            <a href="{{ links[i] }}" target="_blank" class="movie-link">
+                                <img src="{{ posters[i] }}" alt="Poster">
+                                <h3>{{ names[i] }}</h3>
+                            </a>
+                            <div class="movie-footer">
+                                <button class="watchlist-btn" onclick="addToWatchlist('{{ names[i] }}')" title="Add film to the watchlist">+</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        // Funzioni per la gestione delle piattaforme
+        function togglePlatformDropdown() {
+            const dropdown = document.getElementById('platform-dropdown');
+            const overlay = document.getElementById('overlay');
+            dropdown.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function removePlatform(platform) {
+            const checkboxes = document.querySelectorAll('input[name="platform"]');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.value === platform) {
+                    checkbox.checked = false;
+                }
+            });
+            updateSelectedPlatforms();
+        }
+
+        function updateSelectedPlatforms() {
+            const selectedPlatformsDiv = document.getElementById('selected-platforms');
+            const hiddenInput = document.getElementById('hidden-platforms');
+            const checkboxes = document.querySelectorAll('input[name="platform"]:checked');
+            
+            // Aggiorna i tag visibili
+            selectedPlatformsDiv.innerHTML = '';
+            const selectedPlatforms = [];
+            
+            checkboxes.forEach(checkbox => {
+                selectedPlatforms.push(checkbox.value);
+                const platformTag = document.createElement('div');
+                platformTag.className = 'platform-tag';
+                platformTag.innerHTML = `
+                    ${checkbox.value}
+                    <span class="close" onclick="removePlatform('${checkbox.value}')">×</span>
+                `;
+                selectedPlatformsDiv.appendChild(platformTag);
+            });
+            
+            // Aggiorna il campo nascosto
+            hiddenInput.value = selectedPlatforms.join(',');
+        }
+
+        // Inizializza gli event listener
+        document.querySelectorAll('input[name="platform"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedPlatforms);
+        });
+
+        // Chiudi il menu se si clicca fuori da esso
+        window.onclick = function(event) {
+            const dropdown = document.getElementById('platform-dropdown');
+            const overlay = document.getElementById('overlay');
+            if (!event.target.matches('.platform-selector') && !event.target.closest('.platform-dropdown')) {
+                dropdown.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+        }
+
+        // Gestione dell'autocomplete
+        document.getElementById('movie-search')?.addEventListener('input', function() {
+            const input = this.value.toLowerCase();
+            const options = document.querySelectorAll('#movie-options option');
+            
+            options.forEach(option => {
+                option.hidden = !option.value.toLowerCase().includes(input);
+            });
+        });
+
+        // Inizializza le piattaforme al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelectedPlatforms();
+        });
+
+        function addToWatchlist(movieName) {
+            fetch(`/add_to_watchlist/${encodeURIComponent(movieName)}`)
+                .then(() => {
+                    alert(`${movieName} added to your watchlist!`);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</body>
+</html>
